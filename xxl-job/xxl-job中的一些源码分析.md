@@ -67,7 +67,7 @@ public enum ExecutorRouteStrategyEnum {
 
 
 
-+ 策略1:第一个
++ **策略1:第一个**
 
 ~~~java
 package com.xxl.job.admin.core.route.strategy;
@@ -94,7 +94,7 @@ public class ExecutorRouteFirst extends ExecutorRouter {
 
 
 
-+ 策略2:最后一个
++ **策略2:最后一个**
 
 ~~~java
 package com.xxl.job.admin.core.route.strategy;
@@ -121,7 +121,7 @@ public class ExecutorRouteLast extends ExecutorRouter {
 
 
 
-+ 策略3:轮循
++ **策略3:轮循**
 
  ~~~java
 package com.xxl.job.admin.core.route.strategy;
@@ -179,7 +179,7 @@ public class ExecutorRouteRound extends ExecutorRouter {
 
 
 
-+ 策略4:随机
++ **策略4:随机**
 
 ~~~java
 package com.xxl.job.admin.core.route.strategy;
@@ -210,7 +210,7 @@ public class ExecutorRouteRandom extends ExecutorRouter {
 
 
 
-+ 策略5:一致性hash
++ **策略5:一致性hash**
 
 ~~~java
 package com.xxl.job.admin.core.route.strategy;
@@ -303,7 +303,7 @@ public class ExecutorRouteConsistentHash extends ExecutorRouter {
 
 
 
-+ 策略6:最不经常使用
++ **策略6:最不经常使用**
 
 ~~~java 
 package com.xxl.job.admin.core.route.strategy;
@@ -385,3 +385,229 @@ public class ExecutorRouteLFU extends ExecutorRouter {
 
 ~~~
 
++ **策略7:最近最久未使用**
+
+  单个JOB对应的每个执行器，最久为使用的优先被选举 ， 此处使用的是linkHashMap来实现LRU算法的。
+
+  通过linkHashMap的每次get/put的时候会进行排序，最新操作的数据会在最后面。 从而取第一个数据就
+
+  代表是最久没有被使用的
+
+~~~java
+package com.xxl.job.admin.core.route.strategy;
+
+import com.xxl.job.admin.core.route.ExecutorRouter;
+import com.xxl.job.core.biz.model.ReturnT;
+import com.xxl.job.core.biz.model.TriggerParam;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 单个JOB对应的每个执行器，最久为使用的优先被选举
+ *      a、LFU(Least Frequently Used)：最不经常使用，频率/次数
+ *      b(*)、LRU(Least Recently Used)：最近最久未使用，时间
+ *
+ * Created by xuxueli on 17/3/10.
+ */
+public class ExecutorRouteLRU extends ExecutorRouter {
+
+  // 定义个静态的MAP， 用来存储任务ID对应的执行信息
+    private static ConcurrentHashMap<Integer, LinkedHashMap<String, String>> jobLRUMap = new ConcurrentHashMap<Integer, LinkedHashMap<String, String>>();
+  
+    private static long CACHE_VALID_TIME = 0;
+
+    public String route(int jobId, List<String> addressList) {
+
+        // cache clear
+        if (System.currentTimeMillis() > CACHE_VALID_TIME) {
+            jobLRUMap.clear();
+          //重新设置过期时间，默认为一天
+            CACHE_VALID_TIME = System.currentTimeMillis() + 1000*60*60*24;
+        }
+
+        // init lru
+        LinkedHashMap<String, String> lruItem = jobLRUMap.get(jobId);
+        if (lruItem == null) {
+            /**
+             * LinkedHashMap
+             *      a、accessOrder：ture=访问顺序排序（get/put时排序）；false=插入顺序排序；
+             *      b、removeEldestEntry：新增元素时将会调用，返回true时会删除最老元素；可封装		
+             *				 LinkedHashMap并重写该方法，比如定义最大容量，超出时返回true即可实现固定长度的LRU算法；
+             */
+            lruItem = new LinkedHashMap<>(16, 0.75f, true);
+            jobLRUMap.putIfAbsent(jobId, lruItem);
+        }
+
+        // put
+      // 如果地址列表里面有地址不在map中，此处是可以再次放入，防止添加机器的问题
+        for (String address: addressList) {
+            if (!lruItem.containsKey(address)) {
+                lruItem.put(address, address);
+            }
+        }
+
+        // load
+      // 取头部的一个元素，也就是最久操作过的数据
+        String eldestKey = lruItem.entrySet().iterator().next().getKey();
+        String eldestValue = lruItem.get(eldestKey);
+        return eldestValue;
+    }
+
+    @Override
+    public ReturnT<String> route(TriggerParam triggerParam, List<String> addressList) {
+        String address = route(triggerParam.getJobId(), addressList);
+        return new ReturnT<String>(address);
+    }
+
+}
+
+~~~
+
++ **策略8:故障转移**
+
+  这个策略比较简单，遍历集群地址列表，如果失败，则继续调用下一台机器，成功则跳出循环，返回成功信息
+
+~~~java
+package com.xxl.job.admin.core.route.strategy;
+
+import com.xxl.job.admin.core.route.ExecutorRouter;
+import com.xxl.job.admin.core.schedule.XxlJobDynamicScheduler;
+import com.xxl.job.admin.core.util.I18nUtil;
+import com.xxl.job.core.biz.ExecutorBiz;
+import com.xxl.job.core.biz.model.ReturnT;
+import com.xxl.job.core.biz.model.TriggerParam;
+
+import java.util.List;
+
+/**
+ * Created by xuxueli on 17/3/10.
+ */
+public class ExecutorRouteFailover extends ExecutorRouter {
+
+    @Override
+    public ReturnT<String> route(TriggerParam triggerParam, List<String> addressList) {
+
+        StringBuffer beatResultSB = new StringBuffer();
+      // 循环集群地址
+        for (String address : addressList) {
+            // beat
+            ReturnT<String> beatResult = null;
+            try {
+              // 向执行器发送 执行beat信息，试探该机器是否可以正常工作
+                ExecutorBiz executorBiz = XxlJobDynamicScheduler.getExecutorBiz(address);
+                beatResult = executorBiz.beat();
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                beatResult = new ReturnT<String>(ReturnT.FAIL_CODE, ""+e );
+            }
+          // 拼接日志，收集日志信息，后期一起返回
+            beatResultSB.append( (beatResultSB.length()>0)?"<br><br>":"")
+                    .append(I18nUtil.getString("jobconf_beat") + "：")
+                    .append("<br>address：").append(address)
+                    .append("<br>code：").append(beatResult.getCode())
+                    .append("<br>msg：").append(beatResult.getMsg());
+
+            // beat success
+          // 返回状态为成功
+            if (beatResult.getCode() == ReturnT.SUCCESS_CODE) {
+
+                beatResult.setMsg(beatResultSB.toString());
+                beatResult.setContent(address);
+                return beatResult;
+            }
+        }
+        return new ReturnT<String>(ReturnT.FAIL_CODE, beatResultSB.toString());
+
+    }
+}
+
+~~~
+
++ **策略9:忙碌转移**
+
+  这个策略更上面那个故障转移的原理一致，只不过不同的是，**故障转移是判断机器是否存活， 而忙碌转移是向执行器发送消息判断该任务对应的线程是否处于执行状态**。
+
+  ~~~java
+  package com.xxl.job.admin.core.route.strategy;
+  
+  import com.xxl.job.admin.core.route.ExecutorRouter;
+  import com.xxl.job.admin.core.schedule.XxlJobDynamicScheduler;
+  import com.xxl.job.admin.core.util.I18nUtil;
+  import com.xxl.job.core.biz.ExecutorBiz;
+  import com.xxl.job.core.biz.model.ReturnT;
+  import com.xxl.job.core.biz.model.TriggerParam;
+  
+  import java.util.List;
+  
+  /**
+   * Created by xuxueli on 17/3/10.
+   */
+  public class ExecutorRouteBusyover extends ExecutorRouter {
+  
+      @Override
+      public ReturnT<String> route(TriggerParam triggerParam, List<String> addressList) {
+          StringBuffer idleBeatResultSB = new StringBuffer();
+        // 循环集群地址
+          for (String address : addressList) {
+              // beat
+              ReturnT<String> idleBeatResult = null;
+              try {
+                // 向执行服务器发送消息，判断当前jobId对应的线程是否忙碌，接下来可以看一下idleBeat这个方法
+                  ExecutorBiz executorBiz = XxlJobDynamicScheduler.getExecutorBiz(address);
+                  idleBeatResult = executorBiz.idleBeat(triggerParam.getJobId());
+              } catch (Exception e) {
+                  logger.error(e.getMessage(), e);
+                  idleBeatResult = new ReturnT<String>(ReturnT.FAIL_CODE, ""+e );
+              }
+              idleBeatResultSB.append( (idleBeatResultSB.length()>0)?"<br><br>":"")
+                      .append(I18nUtil.getString("jobconf_idleBeat") + "：")
+                      .append("<br>address：").append(address)
+                      .append("<br>code：").append(idleBeatResult.getCode())
+                      .append("<br>msg：").append(idleBeatResult.getMsg());
+  
+              // beat success
+            // 返回成功，代表这台执行服务器对应的线程处于空闲状态
+              if (idleBeatResult.getCode() == ReturnT.SUCCESS_CODE) {
+                  idleBeatResult.setMsg(idleBeatResultSB.toString());
+                  idleBeatResult.setContent(address);
+                  return idleBeatResult;
+              }
+          }
+  
+          return new ReturnT<String>(ReturnT.FAIL_CODE, idleBeatResultSB.toString());
+      }
+  
+  }
+  
+  ~~~
+
+  
+
+  **ExecutorBizImpl**
+
+  ~~~java
+  @Override
+      public ReturnT<String> idleBeat(int jobId) {
+  
+          // isRunningOrHasQueue
+          boolean isRunningOrHasQueue = false;
+        // 从线程池里面获取当前任务对应的线程
+          JobThread jobThread = XxlJobExecutor.loadJobThread(jobId);
+          if (jobThread != null && jobThread.isRunningOrHasQueue()) {
+            // 线程处于运行中
+              isRunningOrHasQueue = true;
+          }
+  
+          if (isRunningOrHasQueue) {
+            // 线程运行中，则返回fasle
+              return new ReturnT<String>(ReturnT.FAIL_CODE, "job thread is running or has trigger queue.");
+          }
+          return ReturnT.SUCCESS;
+      }
+  ~~~
+
+  
+
+  
