@@ -40,6 +40,46 @@ elasticsearch-6.2.4/bin/elasticsearch -d
 
 ![](http://ww2.sinaimg.cn/large/006tNc79ly1g3lhkkj4qnj30s80cmtaj.jpg)
 
+
+
+修改config/elasticsearch.yml，设置监听的IP和端口
+
+~~~shell
+network.host: 192.168.17.133
+http.port: 9200
+~~~
+
+再重新启动elasticsearch，竟然报错了
+
+![](http://ww4.sinaimg.cn/large/006tNc79ly1g3ligpdi6nj311y0i2442.jpg)
+
+~~~shell
+[1]: max number of threads [3795] for user [esuser] is too low, increase to at least [4096]
+~~~
+
+修改配置文件/etc/security/limits.conf，增加如下配置即可:
+
+~~~shell
+* soft nproc 4096
+* hard nproc 4096
+~~~
+
+
+
+~~~shell
+[2]: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+~~~
+
+修改配置文件/etc/sysctl.conf，增加如下配置即可:
+
+~~~shell
+vm.max_map_count=262144
+# 修改完成后执行
+sysctl -p
+~~~
+
+
+
 ### 3.kibana环境准备
 
 ##### 3.1下载kibana
