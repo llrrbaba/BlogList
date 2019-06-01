@@ -1,8 +1,8 @@
-#### 1.fluentd环境准备
+### 1.fluentd环境准备
 
-#### 2.elasticsearch环境准备
+### 2.elasticsearch环境准备
 
-###### 2.1下载elasticsearch
+##### 2.1下载elasticsearch
 
 据说elasticsearch要和kibana版本保持一致，至于为啥我还没搞明白
 
@@ -10,7 +10,7 @@ wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.4.ta
 
 ![](http://ww1.sinaimg.cn/large/006tNc79ly1g3lgj5pwypj317w0a00uz.jpg)
 
-###### 2.2启动elasticsearch
+##### 2.2启动elasticsearch
 
 默认情况下elasticsearch是不能用root用户启动的，所以如果我们使用root用户启动elasticsearch的话，是会报错的
 
@@ -22,12 +22,26 @@ wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.4.ta
 groupadd esgroup
 useradd esuser -g esgroup -p esuser
 chown -R esuser:esgroup elasticsearch-6.2.4
+su eauser
+elasticsearch-6.2.4/bin/elasticsearch
+# 也可以通过 -d 参数让 elasticsearch 后台运行
+elasticsearch-6.2.4/bin/elasticsearch -d
 ~~~
+
+
 
 完成上述步骤后再进行启动，就可以启动成功了
 
-#### 3.kibana环境准备
+![](http://ww1.sinaimg.cn/large/006tNc79ly1g3lhi4mchxj317u0ewtdt.jpg)
 
-###### 3.1下载kibana
+
+
+访问下我们刚启动的elasticsearch
+
+![](http://ww2.sinaimg.cn/large/006tNc79ly1g3lhkkj4qnj30s80cmtaj.jpg)
+
+### 3.kibana环境准备
+
+##### 3.1下载kibana
 
 wget https://artifacts.elastic.co/downloads/kibana/kibana-6.2.4-linux-x86_64.tar.gz
