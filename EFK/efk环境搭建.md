@@ -1,5 +1,28 @@
 ### 1.fluentd环境准备
 
+##### 1.1安装td-agent
+
+最好就按官方文档的版本来，版本大于等于3，这样自带elasticsearch插件
+
+~~~shell
+curl -L https://toolbelt.treasuredata.com/sh/install-redhat-td-agent3.sh | sh
+~~~
+
+启停
+
+~~~shell
+/etc/init.d/td-agent start
+/etc/init.d/td-agent stop
+~~~
+
+发个请求测试下是否成功启动
+
+~~~shell
+$ curl -X POST -d 'json={"json":"message"}' http://localhost:8888/debug.test
+~~~
+
+
+
 ### 2.elasticsearch环境准备
 
 ##### 2.1下载elasticsearch
@@ -78,10 +101,69 @@ vm.max_map_count=262144
 sysctl -p
 ~~~
 
+##### 2.3安装elastic search-head
 
+~~~shell
+git clone git://github.com/mobz/elasticsearch-head.git
+curl --silent --location https://rpm.nodesource.com/setup_8.x | bash -
+yum install -y nodejs
+npm install -g grunt-cli
+npm install -g cnpm --registry=https://registry.npm.taobao.org
+cnpm install
+~~~
+
+
+
+修改Gruntfile.js
+
+~~~shell
+vim Gruntfile.js
+~~~
+
+新增如下配置，允许所有IP可以访问：
+
+![](http://ww3.sinaimg.cn/large/006tNc79ly1g3mmbwmuapj30uw082wez.jpg)
+
+
+
+修改_site/app.js，将ocalhost修改为192.168.17.133，指定具体IP，否则如果head插件和elasticsearch不在同一台服务器，使用 localhost是无法访问的
+
+![](http://ww2.sinaimg.cn/large/006tNc79ly1g3mmgvb0snj312k0fqwhe.jpg)
+
+
+
+修改elasticsearch-6.2.4/config/elasticsearch.yml，设置elasticsearch允许跨域访问
+
+![](http://ww3.sinaimg.cn/large/006tNc79ly1g3mmm8qrvij30to07at9g.jpg)
+
+
+
+开放9100端口，head插件默认使用9100端口
+
+![](http://ww4.sinaimg.cn/large/006tNc79ly1g3mmr80liyj30zk03c74o.jpg)
+
+
+
+启动elasticsearch-head，这里要注意先启动leasticsearch，再启动elastic search-head
+
+![](http://ww1.sinaimg.cn/large/006tNc79ly1g3mn66xsq2j30vo03wgm5.jpg)
+
+
+
+![](http://ww4.sinaimg.cn/large/006tNc79ly1g3mn9gprblj30qq0cqq4s.jpg)
+
+
+
+![](http://ww1.sinaimg.cn/large/006tNc79ly1g3mn8daeb0j31z00d8juv.jpg)
 
 ### 3.kibana环境准备
 
 ##### 3.1下载kibana
 
 wget https://artifacts.elastic.co/downloads/kibana/kibana-6.2.4-linux-x86_64.tar.gz
+
+
+
+修改config/kibana.yml
+
+![](http://ww2.sinaimg.cn/large/006tNc79ly1g3mntllnnej30u60iqadi.jpg)
