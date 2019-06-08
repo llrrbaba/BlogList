@@ -1,6 +1,6 @@
 #### Docker
 
-####1.一些简单准备
+#### 1.一些简单准备
 
 安装完docker会默认创建一个用户组docker，可以新建一个用户到docker组来操作docker，但是发现还是root用户用着爽
 
@@ -12,7 +12,7 @@ useradd dockeruser -g docker -p dockeruser
 
 
 
-####2.写一个简单的docker image
+#### 2.写一个简单的docker image
 
 ###### 2.1准备一个c语言文件hello.c
 
@@ -56,7 +56,7 @@ docker build -t rockerpg/hello-world .
 hello docker
 ~~~
 
-####3.一些命令
+#### 3.一些命令
 
 ###### 3.1快速删除所有容器
 
