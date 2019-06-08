@@ -20,7 +20,7 @@
 yum -y install bind-utils
 ~~~
 
-#####2.3修改/etc/hosts
+##### 2.3修改/etc/hosts
 
 再次执行上面的dig命令，获取到可用IP，并将获取到的可用IP设置给registry-1.docker.io域名
 
