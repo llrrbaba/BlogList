@@ -21,13 +21,13 @@ Heap Dump的格式有很多种，而且不同的格式包含的信息也可能�
 
 ##### 1 使用 jmap 命令生成 dump 文件
 
-> jmap -dump:live,format=b,file=d:\dump\heap.hprof <pid>
+> jmap -dump:live,format=b,file=d:\dump\heap.hprof "pid"
 
 ##### 2 使用 jcmd 命令生成 dump 文件
 
-> jcmd <pid> GC.heap_dump d:\dump\heap.hprof
+> jcmd "pid" GC.heap_dump d:\dump\heap.hprof
 
-#####3 使用 JVM 参数获取 dump 文件
+##### 3 使用 JVM 参数获取 dump 文件
 
 ​	3.1 XX:+HeapDumpOnOutOfMemoryError 
 
