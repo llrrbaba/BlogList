@@ -92,7 +92,7 @@ public class RetryRule extends AbstractLoadBalancerRule {
                break;
             }
          }
-         // 最终要把这个InterruptTask取消掉，这样就能把Timer.TimerQueue中对于该task的引用移除
+         // 最终要把这个InterruptTask取消掉，这样就能把Timer.TaskQueue中对于该task的引用移除
          task.cancel();
       }
 
