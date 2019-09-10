@@ -71,12 +71,16 @@ public class RetryRule extends AbstractLoadBalancerRule {
             && (System.currentTimeMillis() < deadline)) {
 
          // 这里定义了一个InterruptTask，继承TimerTask；
-         // 并且实现了抽象的run方法，run方法的实现很简单，就是判断，如果InterruptTask里面构建的当前线程不为null并且还活着，就中断该线程；
-         // 这个InterruptTask里面实现的run方法什么时候执行呢，就是在当前时间+maxRetryMillis时执行，中断当前线程，这个run方法是在Timer里的mainloop里task.run()调用的
+         // 并且实现了抽象的run方法，run方法的实现很简单，就是判断，
+	 // 如果InterruptTask里面构建的当前线程不为null并且还活着，就中断该线程；
+         // 这个InterruptTask里面实现的run方法什么时候执行呢，就是在当前时间+maxRetryMillis时执行中断当前线程，
+	 // 这个run方法是在Timer里的mainloop里task.run()调用的
          InterruptTask task = new InterruptTask(deadline
                - System.currentTimeMillis());
 
-         // 这里判断Thread.interrupted()，就是和上面InterruptTask的run方法呼应上了，在当前时间+maxRetryMillis之前，这个while为true，从而在当前时间到当前时间+maxRetryMillis这个时间段内，反复重试获取server
+         // 这里判断Thread.interrupted()，就是和上面InterruptTask的run方法呼应上了，
+	 // 在当前时间+maxRetryMillis之前，这个while为true，
+	 // 从而在当前时间到当前时间+maxRetryMillis这个时间段内，反复重试获取server
          while (!Thread.interrupted()) {
             answer = subRule.choose(key);
 
@@ -88,7 +92,7 @@ public class RetryRule extends AbstractLoadBalancerRule {
                break;
             }
          }
-				 // 最终要把这个InterruptTask取消掉，这样就能把Timer.TimerQueue中对于该task的引用移除
+         // 最终要把这个InterruptTask取消掉，这样就能把Timer.TimerQueue中对于该task的引用移除
          task.cancel();
       }
 
