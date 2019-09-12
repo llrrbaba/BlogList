@@ -21,15 +21,17 @@
 
 
 
-源码注释地址：
-
-https://github.com/llrrbaba/javase-learning/blob/master/javase-learning-juc/src/main/java/cn/rocker/javaselearningjuc/blockingqueue/ArrayBlockingQueueNote.md
 
 
+###### 源码注释地址：
 
-参考：
+###### https://github.com/llrrbaba/javase-learning/blob/master/javase-learning-juc/src/main/java/cn/rocker/javaselearningjuc/blockingqueue/ArrayBlockingQueueNote.md
 
-https://www.codejava.net/java-core/concurrency/java-arrayblockingqueue-examples
 
-https://blog.csdn.net/u013124587/article/details/53232140
+
+###### 参考：
+
+###### https://www.codejava.net/java-core/concurrency/java-arrayblockingqueue-examples
+
+###### https://blog.csdn.net/u013124587/article/details/53232140
 
