@@ -12,12 +12,12 @@
 
   ![](https://tva1.sinaimg.cn/large/006y8mN6ly1g6wrn9a5boj30yo0cy75e.jpg)
 
-- **容量：**可以看到ArrayBlockingQueue提供的三个构造函数都是要传入capacity的，也就决定了这是个**有界**(Bounded)的**阻塞队列**(BlockingQueue)
-- **顺序：**底层基于循环数组，元素的进出顺序是FIFO(First-In First-Out)
-- **复杂度：**入队和出队都是O(1)，出队是移除队首的元素，由于循环数组的存在，使得出队复杂度也是O(1)，但是移除队列中间的某个元素的话，时间复杂度就是O(n)了
+- **容量：** 可以看到ArrayBlockingQueue提供的三个构造函数都是要传入capacity的，也就决定了这是个**有界**(Bounded)的**阻塞队列**(BlockingQueue)
+- **顺序：** 底层基于循环数组，元素的进出顺序是FIFO(First-In First-Out)
+- **复杂度：** 入队和出队都是O(1)，出队是移除队首的元素，由于循环数组的存在，使得出队复杂度也是O(1)，但是移除队列中间的某个元素的话，时间复杂度就是O(n)了
 
-- **公平性：**如果有多个**获取**或者**插入**线程被阻塞的话，如果在构造ArrayBlockingQueue时指定fair=true的话，那么signal时等待时间最长的线程将最先获得锁
-- **锁：**ArrayBlockingQueue只是用了一个lock，插入数据或者删除数据都是用的这一个锁，并发行的话，可能不如LinkedBlockingQueue好，因为后者是用了两个锁putLock和takeLock
+- **公平性：** 如果有多个**获取**或者**插入**线程被阻塞的话，如果在构造ArrayBlockingQueue时指定fair=true的话，那么signal时等待时间最长的线程将最先获得锁
+- **锁：** ArrayBlockingQueue只是用了一个lock，插入数据或者删除数据都是用的这一个锁，并发行的话，可能不如LinkedBlockingQueue好，因为后者是用了两个锁putLock和takeLock
 
 
 
