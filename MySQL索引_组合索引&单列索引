@@ -1,0 +1,203 @@
+#### 什么时候使用组合索引，什么时候使用单独索引
+
+##### 一.前期数据准备
+
+###### 1.建表
+
+~~~ sql
+CREATE TABLE `user` (
+  `uid` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL,
+  `pwd` varchar(50) DEFAULT NULL,
+  `create_time` datetime DEFAULT NULL,
+  `modify_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `rids` varchar(15) DEFAULT NULL,
+  `nickname` varchar(45) DEFAULT NULL,
+  `company` varchar(15) DEFAULT NULL,
+  PRIMARY KEY (`uid`),
+  UNIQUE KEY `name_UNIQUE` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8
+~~~
+
+###### 2.插入数据
+
+~~~ sql
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (1, 'rocker', 'rocker', NULL, '2019-10-08 11:05:02', '1', 'rocker', 'rocker');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (2, 'danny', 'danny', NULL, '2019-10-08 11:31:36', '2', 'rocker', 'danny');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (3, 'tom', 'tom', NULL, '2019-10-08 11:31:39', '1', 'tom', 'rocker');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (4, 'messi', 'messi', NULL, '2019-10-08 11:31:21', '2', 'messi', 'messi');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (5, 'wenger', 'wenger', NULL, '2019-10-08 11:29:38', '1', 'wenger', 'rocker');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (6, 'henry', 'henry', NULL, '2019-10-08 11:30:46', '2', 'henry', 'henry');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (7, 'ronaldo', 'ronaldo', NULL, '2019-10-08 11:30:49', '1', 'ronaldo', 'ronaldo');
+INSERT INTO `monitor`.`user`(`uid`, `name`, `pwd`, `create_time`, `modify_time`, `rids`, `nickname`, `company`) VALUES (8, 'kaka', 'kaka', NULL, '2019-10-08 11:29:45', '2', 'kaka', 'rocker');
+~~~
+
+##### 二.分析
+
+###### 1.不加索引
+
+首先在'nickname'和‘company’这俩字段不加索引的情况下执行一个查询语句，并分析
+
+~~~ sql
+mysql> explain select * from user where nickname = 'rocker' and company = 'rocker';
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | user  | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    12.50 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+~~~
+
+可以看到，没有走索引，总共查询了8条数据，而表中总共也是8条数据，相当于全表扫描了。
+
+~~~ sql
+mysql> explain select * from user where company = 'rocker' or nickname = 'rocker';
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | user  | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    8 |    23.44 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+~~~
+
+**可以看到：不加任何索引的情况下，不管是and还是or，都是全表扫描，没有索引。**
+
+###### 2.单独索引
+
+给nickname和company分别加上索引，再执行and和or的sql查询
+
+~~~ sql
+alter table user add index `idx_nickname` (`nickname`);
+alter table user add index `idx_company` (`company`);
+~~~
+
+执行查询语句and
+
+~~~ sql
+mysql> explain select * from user where nickname = 'rocker' and company = 'rocker';
++----+-------------+-------+------+--------------------------+--------------+---------+-------+------+-------------+
+| id | select_type | table | type | possible_keys            | key          | key_len | ref   | rows | Extra       |
++----+-------------+-------+------+--------------------------+--------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | user  | ref  | idx_nickname,idx_company | idx_nickname | 138     | const |    2 | Using where |
++----+-------------+-------+------+--------------------------+--------------+---------+-------+------+-------------+
+1 row in set (0.05 sec)
+~~~
+
+执行查询语句or
+
+~~~ sql
+mysql> explain select * from user where company = 'rocker' or nickname = 'rocker';
++----+-------------+-------+------+--------------------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys            | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+--------------------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | user  | ALL  | idx_nickname,idx_company | NULL | NULL    | NULL |    8 | Using where |
++----+-------------+-------+------+--------------------------+------+---------+------+------+-------------+
+1 row in set (0.00 sec)
+~~~
+
+**可以看到：加上索引后and查询是可以走索引的，但是只有一个索引起作用，对于另一个索引字段还是要进行遍历，而且and查询会根据关联性高(符合该条件的行数少)选择具体走哪个索引**
+
+**or查询不走索引**
+
+###### 3.组合索引
+
+删除原先的单独索引，新增组合索引
+
+~~~sql
+alter table user drop index `idx_nickname`
+alter table user drop index `idx_company`
+
+alter table user add index `idx_composition` (`nickname`,`company`);
+~~~
+
+执行查询语句and
+
+~~~sql
+mysql> explain select * from user where nickname = 'rocker' and company = 'rocker';
++----+-------------+-------+------+-----------------+-----------------+---------+-------------+------+-------------+
+| id | select_type | table | type | possible_keys   | key             | key_len | ref         | rows | Extra       |
++----+-------------+-------+------+-----------------+-----------------+---------+-------------+------+-------------+
+|  1 | SIMPLE      | user  | ref  | idx_composition | idx_composition | 186     | const,const |    1 | Using where |
++----+-------------+-------+------+-----------------+-----------------+---------+-------------+------+-------------+
+1 row in set (0.00 sec)
+~~~
+
+执行查询语句or
+
+~~~sql
+mysql> explain select * from user where company = 'rocker' or nickname = 'rocker';
++----+-------------+-------+------+-----------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys   | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+-----------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | user  | ALL  | idx_composition | NULL | NULL    | NULL |    8 | Using where |
++----+-------------+-------+------+-----------------+------+---------+------+------+-------------+
+1 row in set (0.00 sec)
+~~~
+
+**可以看到：加上组合索引后，组合索引起作用，只需查询一条符合结果的数据，效率要比单独索引高，**
+
+**但是复合索引对于or查询不起作用**
+
+###### 4.组合索引查询单个索引列
+
+对于组合索引为(`nickname`,`company`)这个顺序的情况
+
+~~~sql
+alter table user drop index `idx_composition`;
+
+alter table user add index `idx_composition` (`nickname`,`company`);
+~~~
+
+
+
+~~~sql
+mysql> explain select * from user where nickname = 'rocker';
++----+-------------+-------+------+-----------------+-----------------+---------+-------+------+-------------+
+| id | select_type | table | type | possible_keys   | key             | key_len | ref   | rows | Extra       |
++----+-------------+-------+------+-----------------+-----------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | user  | ref  | idx_composition | idx_composition | 138     | const |    2 | Using where |
++----+-------------+-------+------+-----------------+-----------------+---------+-------+------+-------------+
+1 row in set (0.00 sec)
+
+mysql> explain select * from user where company = 'rocker';
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | user  | ALL  | NULL          | NULL | NULL    | NULL |    8 | Using where |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+1 row in set (0.00 sec)
+~~~
+
+**可以看到：组合索引中nickname在前时，单独查询nickname会走索引，单独查询compamy不会走索引**       
+
+
+
+对于组合索引为(`company`,`nickname`)这个顺序的情况
+
+~~~sql
+alter table user drop index `idx_composition`;
+
+alter table user add index `idx_composition` (`company`,`nickname`);
+~~~
+
+
+
+~~~sql
+mysql> explain select * from user where nickname = 'rocker';
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | user  | ALL  | NULL          | NULL | NULL    | NULL |    8 | Using where |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+1 row in set (0.00 sec)
+
+mysql> explain select * from user where company = 'rocker';
++----+-------------+-------+------+-----------------+-----------------+---------+-------+------+-------------+
+| id | select_type | table | type | possible_keys   | key             | key_len | ref   | rows | Extra       |
++----+-------------+-------+------+-----------------+-----------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | user  | ref  | idx_composition | idx_composition | 48      | const |    2 | Using where |
++----+-------------+-------+------+-----------------+-----------------+---------+-------+------+-------------+
+1 row in set (0.00 sec)
+~~~
+
+**可以看到：组合索引中compamy在前时，单独查询compamy会走索引，单独查询nickname不会走索引**
