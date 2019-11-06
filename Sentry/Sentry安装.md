@@ -62,7 +62,7 @@
 > docker-compose run --rm web config generate-secret-key
 > ```
 
-##### 2.5将上一步生成的key设置到docker-compose.yml的 SENTRY_SECRET_KEY 项
+##### 2.5将上一步生成的key设置到docker-compose.yml的 SENTRY_SECRET_KEY 项，这里要注意将SENTRY_EMAIL_HOST注释掉，否则.env文件里的配置不生效
 
 > environment:
 >     SENTRY_SECRET_KEY: '3r7df#jgkf(+2v(bxmdt7m^3+#59*@xn_%0whsi72xi8ac_&o3'
