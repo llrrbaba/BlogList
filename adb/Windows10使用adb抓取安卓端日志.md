@@ -20,7 +20,7 @@ https://www.charlesproxy.com/assets/release/4.5.4/charles-proxy-4.5.4-win64.msi
 
 ##### 1.3 确认安装&环境变量配置均成功
 
-![image.png](https://i.loli.net/2019/11/12/ZRrvXYnujtgyF1E.png)
+![image.png](https://i.loli.net/2019/11/12/wYbNxmfTgPXRjzq.png)
 
 #### 二.手机端准备(因为我是小米手机MIUI11，就直说小米了，别的手机自行参考)
 
