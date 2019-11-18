@@ -55,7 +55,6 @@
 	public ClassPathXmlApplicationContext(
 			String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
 			throws BeansException {
-
 		super(parent);
 		setConfigLocations(configLocations);
 		if (refresh) {
@@ -78,7 +77,7 @@
 		if (locations != null) {
 			Assert.noNullElements(locations, "Config locations must not be null");
 			this.configLocations = new String[locations.length];
-            // 解析location，并设置到configLocations数组
+            		// 解析location，并设置到configLocations数组
 			for (int i = 0; i < locations.length; i++) {
 				this.configLocations[i] = resolvePath(locations[i]).trim();
 			}
