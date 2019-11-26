@@ -1,6 +1,6 @@
-### 1.fluentd环境准备
+### 一.fluentd环境准备
 
-##### 1.1安装td-agent
+##### 1.1 安装td-agent
 
 最好就按官方文档的版本来，版本大于等于3，这样自带elasticsearch插件
 
@@ -23,7 +23,7 @@ $ curl -X POST -d 'json={"json":"message"}' http://localhost:8888/debug.test
 
 
 
-### 2.elasticsearch环境准备
+### 二.elasticsearch环境准备
 
 ##### 2.1下载elasticsearch
 
@@ -33,7 +33,7 @@ wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.4.ta
 
 ![](http://ww1.sinaimg.cn/large/006tNc79ly1g3lgj5pwypj317w0a00uz.jpg)
 
-##### 2.2启动elasticsearch
+##### 2.2 启动elasticsearch
 
 默认情况下elasticsearch是不能用root用户启动的，所以如果我们使用root用户启动elasticsearch的话，是会报错的
 
@@ -101,7 +101,7 @@ vm.max_map_count=262144
 sysctl -p
 ~~~
 
-##### 2.3安装elastic search-head
+##### 2.3 安装elastic search-head
 
 ~~~shell
 git clone git://github.com/mobz/elasticsearch-head.git
@@ -156,7 +156,7 @@ vim Gruntfile.js
 
 ![](http://ww1.sinaimg.cn/large/006tNc79ly1g3mn8daeb0j31z00d8juv.jpg)
 
-### 3.kibana环境准备
+### 三.kibana环境准备
 
 ##### 3.1下载kibana
 
@@ -167,3 +167,70 @@ wget https://artifacts.elastic.co/downloads/kibana/kibana-6.2.4-linux-x86_64.tar
 修改config/kibana.yml
 
 ![](http://ww2.sinaimg.cn/large/006tNc79ly1g3mntllnnej30u60iqadi.jpg)
+
+##### 3.2 访问Kibana
+
+~~~shell
+ip:5601
+~~~
+
+### 四.修改td-agent配置文件
+
+~~~shell
+<source>
+  @type tail
+  path /usr/local/worktools/workprojects/log/server-api.log
+  tag tvproxy.vip.error.log
+  pos_file /var/log/td-agent/pos/tvproxy.vip.error.log.pos
+  <parse>
+    @type multiline
+    format_firstline /\d{4}-\d{1,2}-\d{1,2}/
+    format1 /^(?<time>\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}) \[(?<thread>.*)\] (?<level>.*) \[(?<class>.*):(?<line>.*)\] (?<message>.*)/
+  </parse>
+</source>
+
+<match tvproxy.vip.error.**>
+  @type elasticsearch
+  host 192.168.160.131
+  port 9200
+  include_tag_key true
+  tag_key @log_name
+  logstash_format true
+  logstash_prefix ${tag}
+  flush_interval 10s
+  <buffer>
+    @type memory
+    total_limit_size 2G
+    flush_thread_count 2
+  </buffer>
+</match>
+
+<source>
+  @type tail
+  path /usr/local/worktools/workprojects/log/error.log
+  tag tvproxy.vip.api.log
+  pos_file /var/log/td-agent/pos/tvproxy.vip.api.log.pos
+  <parse>
+    @type multiline
+    format_firstline /\d{4}-\d{1,2}-\d{1,2}/
+    format1 /^(?<time>\d{4}-\d{1,2}-\d{1,2} \d{1,2}:\d{1,2}:\d{1,2}) \[(?<thread>.*)\] (?<level>.*) \[(?<class>.*):(?<line>.*)\] (?<message>.*)/
+  </parse>
+</source>
+
+<match tvproxy.vip.api.**>
+  @type elasticsearch
+  host 192.168.160.131
+  port 9200
+  include_tag_key true
+  tag_key @log_name
+  logstash_format true
+  logstash_prefix ${tag}
+  flush_interval 10s
+  <buffer>
+    @type memory
+    total_limit_size 2G
+    flush_thread_count 2
+  </buffer>
+</match>
+~~~
+
