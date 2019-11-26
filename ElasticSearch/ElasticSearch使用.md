@@ -6,6 +6,23 @@
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.4.2-linux-x86_64.tar.gz
 ~~~
 
+##### 1.2 解压`elasticsearch-7.4.2-linux-x86_64.tar.gz`
+
+~~~shell
+tar zxvf elasticsearch-7.4.2-linux-x86_64.tar.gz
+~~~
+
+##### 1.3 修改相关设置(整合SkyWalking用)
+
+~~~shell
+# 修改elasticsearch.yml
+vim config/elasticsearch.yml
+# 修改elasticsearch.yml文件，并设置cluster.name设置成CollectorDBCluster。此名称需要和collector配置文件一致
+cluster.name: CollectorDBCluster
+# 修改ES配置network.host值，将network.host的值修改成0.0.0.0
+network.host: 0.0.0.0
+~~~
+
 
 
 #### 二.使用ElasticSearch期间遇到的问题
@@ -33,6 +50,8 @@ chown -R elsearch:elsearch elasticsearch-7.4.2/
 su elsearch
 # ElasticSearch跑起来
 ./bin/elasticsearch
+# 一般后台启动
+./bin/elasticsearch -d
 ~~~
 
 
