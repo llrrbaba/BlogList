@@ -1,6 +1,6 @@
-<mxfile modified="2020-01-05T07:46:45.737Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36" etag="S0Pj3oiSPkHvO8mf3TjX" version="12.4.8" type="github">
+<mxfile modified="2020-01-05T07:47:48.450Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36" etag="SxfEri7MBk6s3XJ2B9Pf" version="12.4.8" type="github">
   <diagram id="WI9T0HZ2pTsCkuznbFz-" name="Page-1">
-    <mxGraphModel dx="854" dy="436" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="1220" dy="623" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -36,6 +36,9 @@
         </mxCell>
         <mxCell id="KipuTBZGTqe2G2WcFVqi-3" value="" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;strokeColor=#B5739D;fillColor=none;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="495" y="170" width="230" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="KipuTBZGTqe2G2WcFVqi-4" value="map&amp;nbsp; flatmap filter join ..." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;shadow=0;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="170" width="230" height="20" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
